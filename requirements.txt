@@ -1,0 +1,9 @@
+h5py
+keras
+matplotlib
+tensorflow
+pickle
+numpy
+opencv-python
+pyqt5
+pygame
