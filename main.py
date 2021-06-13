@@ -5,8 +5,10 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 import qdarkstyle
 from mainui import *
 
+import pygame
 import tensorflow as tf
 import cv2
+
 
 class MyWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
@@ -24,6 +26,7 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         self.about_button.clicked.connect(self._about)
         self.exit_button.clicked.connect(self._close)
         self.timer_camera.timeout.connect(self.show_camera)
+        #可以考虑增加一个设定points阈值的按钮
 
     def load_parameters(self):
         self.model=tf.keras.models.load_model("models/detect.h5")
@@ -42,6 +45,12 @@ class MyWindow(QMainWindow, Ui_MainWindow):
 
         self.path = os.getcwd()
 
+        music="resource/warning.mp3" 
+        pygame.mixer.init()
+
+        pygame.mixer.music.load(music)
+
+        self.first_time_music=1
 
     def opencamera(self):
         if self.timer_camera.isActive() == False:
@@ -51,7 +60,7 @@ class MyWindow(QMainWindow, Ui_MainWindow):
                                                     buttons=QtWidgets.QMessageBox.Ok,
                                                     defaultButton=QtWidgets.QMessageBox.Ok)
             else:
-                self.timer_camera.start(10)
+                self.timer_camera.start(1)
                 self.camera_button.setText(u'关闭相机')
         else:
             self.timer_camera.stop()
@@ -94,7 +103,7 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         if(rightPrediction[0][0]==0 and leftPrediction[0][0]==0):          
             if self.points!=99:
                 self.points+=1    
-            cv2.putText(image, "Closed!", (20, height-20), cv2.FONT_HERSHEY_TRIPLEX, 1,(255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(image, "Closed!", (20, height-20), cv2.FONT_HERSHEY_TRIPLEX, 1,(0, 0, 255), 1, cv2.LINE_AA)
         else:
             self.points-=1
             if(self.points<0):
@@ -117,10 +126,9 @@ class MyWindow(QMainWindow, Ui_MainWindow):
                     self.thick +=2
             cv2.rectangle(image, (0,0), (width, height), (0, 0, 255), self.thick)
           
-            try:
-                sound.play()
-            except:
-                pass
+            if(self.first_time_music==1):
+                pygame.mixer.music.play()
+                self.first_time_music=0
             
             record_path=os.path.join(self.path,"record",str(time.strftime("%d %b,%Y")))
             if not os.path.exists(record_path):
@@ -129,6 +137,9 @@ class MyWindow(QMainWindow, Ui_MainWindow):
             cv2.imwrite(record_img_path, image)
             
         else:
+            self.first_time_music=1
+            pygame.mixer.music.stop()
+
             pe = QPalette()
             pe.setColor(QPalette.WindowText,QColor("black"))
             self.score_label.setPalette(pe)         
@@ -138,8 +149,8 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         self.camera_label.setPixmap(QtGui.QPixmap.fromImage(showImage))
     
 
-
     def openvideo(self):
+        #读取视频 功能相同
         pass
 
     def _about(self):
